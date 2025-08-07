@@ -89,7 +89,8 @@ def run_single_task(
         prompt = chat_llm_task_prompt.format(
             ctx_path=ctx_path,
             question=task["question"],
-            guidelines=task["guidelines"]
+            guidelines=task["guidelines"],
+            referred_examples=""
         )
         agent = create_code_agent_with_chat_llm(model_id, api_base, api_key, max_steps, use_azure_auth)
 

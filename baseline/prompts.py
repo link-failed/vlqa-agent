@@ -52,6 +52,7 @@ reasoning_llm_task_prompt = """
 
 You must follow these guidelines when you produce your final answer:
 {guidelines}
+{referred_examples}
 
 Now Begin! If you solve the task correctly, you will receive a reward of $1,000,000.
 """
@@ -62,6 +63,7 @@ Don't forget to reference any documentation in the data dir before answering a q
 Here is the question you need to answer: {question}
 
 Here are the guidelines you MUST follow when answering the question above: {guidelines}
+{referred_examples}
 
 Before answering the question, reference any documentation in the data dir and leverage its information in your reasoning / planning.
 """

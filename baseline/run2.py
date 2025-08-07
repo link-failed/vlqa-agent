@@ -1,19 +1,6 @@
 #!/usr/bin/env python3
 
 import yaml
-# Commented out Phoenix tracing due to dependency conflicts
-# from opentelemetry.sdk.trace import TracerProvider
-
-# from openinference.instrumentation.smolagents import SmolagentsInstrumentor
-# from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-# from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-
-# endpoint = "http://0.0.0.0:6006/v1/traces"
-# trace_provider = TracerProvider()
-# trace_provider.add_span_processor(SimpleSpanProcessor(OTLPSpanExporter(endpoint)))
-
-# SmolagentsInstrumentor().instrument(tracer_provider=trace_provider)
-
 import sys
 from pathlib import Path
 # Add parent directory to Python path to find dabstep_benchmark module
@@ -23,6 +10,7 @@ import argparse
 import logging
 import os
 import time
+import ast
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import datasets
 import pandas as pd
@@ -50,6 +38,47 @@ from utils import (
 logging.basicConfig(level=logging.WARNING, handlers=[TqdmLoggingHandler()])
 logger = logging.getLogger(__name__)
 
+
+def load_referred_tasks_mapping():
+    """Load the mapping of task_id to referred task IDs from clustered_single_semi_2.csv"""
+    csv_path = Path(__file__).resolve().parent.parent / "data" / "task_cluster" / "clustered_single_semi_2.csv"
+    df = pd.read_csv(csv_path)
+    mapping = {}
+    
+    for _, row in df.iterrows():
+        task_id = str(row['task_id'])
+        referred_str = str(row['referred'])
+        
+        try:
+            if referred_str and referred_str != 'nan':
+                referred_ids = ast.literal_eval(referred_str)
+                mapping[task_id] = [str(ref_id) for ref_id in referred_ids] if isinstance(referred_ids, list) else []
+            else:
+                mapping[task_id] = []
+        except:
+            mapping[task_id] = []
+    
+    return mapping
+
+
+def get_referred_trajectories(referred_ids: list[str]) -> str:
+    """Get the trajectory content for the referred task IDs"""
+    if not referred_ids:
+        return ""
+    
+    trajectories_dir = Path(__file__).resolve().parent.parent / "data" / "trajectories"
+    trajectories_content = []
+    
+    for ref_id in referred_ids:
+        trajectory_file = trajectories_dir / f"{ref_id}.py"
+        if trajectory_file.exists():
+            with open(trajectory_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+            trajectories_content.append(f"=== Example Trajectory {ref_id} ===\n{content}\n")
+    
+    return "\n".join(trajectories_content) if trajectories_content else ""
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--concurrency", type=int, default=4)
@@ -75,12 +104,18 @@ def run_single_task(
         ctx_path: str,
         base_filename: Path,
         is_dev_data: bool,
-        max_steps: int
+        max_steps: int,
+        referred_mapping: dict
 ):
+    task_id = str(task["task_id"])
+    referred_ids = referred_mapping.get(task_id, [])
+    referred_examples = get_referred_trajectories(referred_ids)
+
     if is_reasoning_llm(model_id):
         prompt = reasoning_llm_task_prompt.format(
             question=task["question"],
-            guidelines=task["guidelines"]
+            guidelines=task["guidelines"],
+            referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else ""
         )
         agent = create_code_agent_with_reasoning_llm(model_id, api_base, api_key, max_steps, ctx_path, use_azure_auth)
         prompt = agent.system_prompt + "\n" + prompt
@@ -89,7 +124,8 @@ def run_single_task(
         prompt = chat_llm_task_prompt.format(
             ctx_path=ctx_path,
             question=task["question"],
-            guidelines=task["guidelines"]
+            guidelines=task["guidelines"],
+            referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else ""
         )
         agent = create_code_agent_with_chat_llm(model_id, api_base, api_key, max_steps, use_azure_auth)
 
@@ -116,8 +152,9 @@ def main():
     logger.warning(f"Starting run with arguments: {args}")
 
     ctx_path = download_context(str(Path().resolve()))
+    referred_mapping = load_referred_tasks_mapping()
 
-    runs_dir = Path().resolve() / "runs"
+    runs_dir = Path().resolve() / "runs2"
     runs_dir.mkdir(parents=True, exist_ok=True)
     timestamp = time.time() if not args.timestamp else args.timestamp
     base_filename = runs_dir / f"{args.model_id.replace('/', '_').replace('.', '_')}/{args.split}/{int(timestamp)}"
@@ -152,7 +189,8 @@ def main():
                ctx_path,
                base_filename,
                (args.split == "dev"),
-               args.max_steps
+               args.max_steps,
+               referred_mapping
             )
             for task in tasks_to_run
         ]
