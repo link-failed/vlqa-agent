@@ -178,12 +178,8 @@ eval-queue/
 eval-results/
 eval-queue-bk/
 eval-results-bk/
-runs/
-logs/
-contact_info.jsonl
 
-# Data files (uncomment if you want to ignore all data)
-data/
+contact_info.jsonl
 
 # Temporary files
 *.tmp
