@@ -1,0 +1,58 @@
+"""
+What is the top country (ip_country) for fraud? A. NL, B. BE, C. ES, D. FR
+Answer must be in the form 'X. Y' where X is the option's letter chosen and Y is the option's country code. If a question does not have a relevant or applicable answer for the task, please respond with 'Not Applicable'.
+"""
+
+import pandas as pd
+import os
+
+def analyze_fraud_by_country():
+    # Load the payments data
+    data_path = "./test_case/dabstep_data/payments.csv"
+    df = pd.read_csv(data_path)
+    
+    # Calculate fraud rate by country
+    # "Top country for fraud" refers to fraud rate (percentage of transactions that are fraudulent)
+    # rather than absolute fraud count, as rate is a more meaningful metric for comparison
+    country_stats = df.groupby('ip_country').agg({
+        'has_fraudulent_dispute': ['count', 'sum']
+    }).round(4)
+    
+    # Flatten column names
+    country_stats.columns = ['total_transactions', 'fraud_count']
+    
+    # Calculate fraud rate (percentage)
+    country_stats['fraud_rate'] = (country_stats['fraud_count'] / country_stats['total_transactions'] * 100).round(4)
+    
+    # Sort by fraud rate (descending)
+    country_stats = country_stats.sort_values('fraud_rate', ascending=False)
+    
+    print("Fraud statistics by country:")
+    print(country_stats)
+    
+    # Get the top country for fraud (highest fraud rate)
+    top_fraud_country = country_stats.index[0]
+    top_fraud_rate = country_stats.loc[top_fraud_country, 'fraud_rate']
+    
+    # Map to the multiple choice options
+    options = {
+        'NL': 'A',
+        'BE': 'B', 
+        'ES': 'C',
+        'FR': 'D'
+    }
+    
+    if top_fraud_country in options:
+        answer = f"{options[top_fraud_country]}. {top_fraud_country}"
+    else:
+        answer = "Not Applicable"
+    
+    print(f"\nTop country for fraud: {top_fraud_country} (fraud rate: {top_fraud_rate}%)")
+    print(f"Answer: {answer}")
+    
+    return answer
+
+if __name__ == "__main__":
+    # the answer must be directly stored in answer variable
+    answer = analyze_fraud_by_country()
+    print(answer)

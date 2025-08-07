@@ -70,7 +70,7 @@ def get_referred_trajectories(referred_ids: list[str]) -> str:
     trajectories_content = []
     
     for ref_id in referred_ids:
-        trajectory_file = trajectories_dir / f"{ref_id}.py"
+        trajectory_file = trajectories_dir / f"{ref_id}.md"
         if trajectory_file.exists():
             with open(trajectory_file, 'r', encoding='utf-8') as f:
                 content = f.read()

@@ -1,0 +1,55 @@
+"""
+In January 2023 what delta would Belles_cookbook_store pay if the relative fee of the fee with ID=384 changed to 1?
+Answer must be just a number rounded to 14 decimals. If a question does not have a relevant or applicable answer for the task, please respond with 'Not Applicable'.
+"""
+"""
+The fee is provided by `fee = fixed_amount + rate * transaction_value / 10000`.
+"""
+
+import json
+import csv
+
+# Load fees data from the JSON file
+with open('./test_case/dabstep_data/fees.json', 'r') as f:
+    fees_data = json.load(f)
+
+# Find the fee with ID 384
+fee_384 = next((fee for fee in fees_data if fee['ID'] == 384), None)
+print(fee_384)
+
+if not fee_384:
+    print("Not Applicable")
+else:
+    card_scheme = fee_384['card_scheme']
+    is_credit = 'TRUE' if fee_384['is_credit'] else ('FALSE' if fee_384['is_credit'] is False else None)
+    aci_list = fee_384['aci']
+    intracountry = fee_384['intracountry']
+    account_type_list = fee_384['account_type']
+
+    # Filter transactions applying fee 384's conditions
+    with open('./test_case/dabstep_data/payments.csv', 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        january_transactions = [
+            float(row['eur_amount']) for row in reader
+            if row['merchant'] == 'Belles_cookbook_store' and int(row['year']) == 2023
+            and row['day_of_year'].isdigit() and int(row['day_of_year']) <= 31
+            and row['card_scheme'] == card_scheme
+            and (is_credit is None or row['is_credit'] == is_credit)
+            and (aci_list == [] or row['aci'] in aci_list)
+            # intracountry is 1.0 if issuer country == acquiring country, and 0.0 when they are different
+            and (intracountry is None or float(row['issuing_country'] == row['acquirer_country']) == intracountry)
+            and (account_type_list == [] or row['account_type'] in account_type_list)
+        ]
+
+    transaction_value = sum(january_transactions)
+
+    current_fee = (fee_384['rate'] / 10000) * transaction_value + fee_384['fixed_amount'] * len(january_transactions)
+
+    new_rate = 1
+    new_fee = (new_rate / 10000) * transaction_value + fee_384['fixed_amount'] * len(january_transactions)
+
+    delta = new_fee - current_fee
+
+    # the answer must be directly stored in answer variable
+    answer = f"{delta:.14f}"
+    print(answer)
