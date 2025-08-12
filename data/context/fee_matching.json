@@ -1,0 +1,223 @@
+{
+  "fees": {
+    "merchant_category_code": {
+      "description": "a list; when it is null, it means this fee applies to all merchant_category_code",
+      "references": [{
+        "column": "merchant_data.mcc",
+        "matching": "merchant_data.mcc should exactly match one of the values in this list"
+      },
+      {
+        "column": "payments.merchant",
+        "matching": "need to look up merchant_data.json"
+      }]
+    },
+    "monthly_fraud_level": {
+      "description": "a range of percentage calculated by a merchant's fraudulent transaction number / total transaction number of that month; when it is null, it means this fee applies to all monthly_fraud_level",
+      "references": [{
+        "column": ["payments.has_fraudulent_dispute", "day_of_year"],
+        "matching": "need to calculate and match the percentage range"
+      }]
+    },
+    "monthly_volume": {
+      "description": "a range of a merchant's total transaction amount of that month; when it is null, it means this fee applies to all monthly_volume",
+      "references": [{
+        "column": ["payments.eur_amount", "day_of_year"],
+        "matching": "need to calculate and match the range"
+      }]
+    },
+    "is_credit": {
+      "description": "true or false; when it is null, it means this fee applies to all is_credit",
+      "references": [{
+        "column": "payments.is_credit",
+        "matching": "match the boolean value"
+      }]
+    },
+    "intracountry": {
+      "description": "1.0 when payments.issuing_country == payments.acquirer_country, 0.0 when payments.issuing_country != payments.acquirer_country; when it is null, it means this fee applies to all intracountry",
+      "references": [{
+        "column": ["payments.issuing_country", "payments.acquirer_country"],
+        "matching": "need to get the boolean value from payments.csv for matching"
+      }]
+    },
+    "aci": {
+      "description": "a list; when it is empty, it means this fee applies to all aci",
+      "references": [{
+        "column": "payments.aci",
+        "matching": "payments.aci should exactly match one of the values in this list"
+      }]
+    },
+    "account_type": {
+      "description": "a list; when it is empty, it means this fee applies to all account_type",
+      "references": [{
+        "column": "merchant_data.account_type",
+        "matching": "merchant_data.account_type should exactly match one of the values in this list"
+      }]
+    },
+    "capture_delay": {
+      "description": "a range of int like '<3' '3-5' or a string like 'manual'. when it is null, it means this fee applies to all capture_delay",
+      "references": [{
+        "column": "merchant_data.capture_delay",
+        "matching": "when it is a range, need to check if the payment's capture_delay falls into that range; when it is a string, need to exactly match the string"
+      }]
+    }
+  },
+  "merchant_data": {
+    "merchant": {
+      "description": "unique identifier for each merchant",
+      "references": [{
+        "column": "payments.merchant",
+        "matching": "exact string match"
+      }]
+    },
+    "acquirer": {
+      "description": "a list of acquirer bank names for this merchant",
+      "references": [{
+        "column": "acquirer_countries.acquirer",
+        "matching": "acquirer should exactly match one of the values in the list"
+      },
+      {
+        "column": "payments.acquirer_country",
+        "matching": "need to look up acquirer_countries.csv to get country_code"
+      }]
+    },
+    "merchant_category_code": {
+      "description": "merchant category code as integer",
+      "references": [{
+        "column": "merchant_category_codes.mcc",
+        "matching": "exact integer match"
+      },
+      {
+        "column": "fees.merchant_category_code",
+        "matching": "merchant_category_code should be in fees.merchant_category_code list"
+      }]
+    },
+    "account_type": {
+      "description": "single character representing account type",
+      "references": [{
+        "column": "fees.account_type",
+        "matching": "account_type should be in fees.account_type list"
+      }]
+    },
+    "capture_delay": {
+      "description": "capture delay as string or integer, can be 'immediate', 'manual', or numeric values",
+      "references": [{
+        "column": "fees.capture_delay",
+        "matching": "exact match or range matching for fees"
+      }]
+    }
+  },
+  "payments": {
+    "merchant": {
+      "description": "merchant identifier for the payment",
+      "references": [{
+        "column": "merchant_data.merchant",
+        "matching": "exact string match"
+      }]
+    },
+    "card_scheme": {
+      "description": "payment card scheme name",
+      "references": [{
+        "column": "fees.card_scheme",
+        "matching": "exact string match"
+      }]
+    },
+    "is_credit": {
+      "description": "boolean indicating if payment is credit",
+      "references": [{
+        "column": "fees.is_credit",
+        "matching": "exact boolean match"
+      }]
+    },
+    "issuing_country": {
+      "description": "country code where card was issued",
+      "references": [{
+        "column": "acquirer_countries.country_code",
+        "matching": "country code format match"
+      },
+      {
+        "column": "fees.intracountry",
+        "matching": "used with acquirer_country to determine intracountry status"
+      }]
+    },
+    "acquirer_country": {
+      "description": "country code of the acquirer",
+      "references": [{
+        "column": "acquirer_countries.country_code",
+        "matching": "country code format match"
+      },
+      {
+        "column": "fees.intracountry",
+        "matching": "used with issuing_country to determine intracountry status"
+      }]
+    },
+    "aci": {
+      "description": "single character aci value",
+      "references": [{
+        "column": "fees.aci",
+        "matching": "aci should be in fees.aci list"
+      }]
+    },
+    "has_fraudulent_dispute": {
+      "description": "boolean indicating if payment has fraudulent dispute",
+      "references": [{
+        "column": "fees.monthly_fraud_level",
+        "matching": "used to calculate monthly fraud percentage for merchant"
+      }]
+    },
+    "eur_amount": {
+      "description": "payment amount in euros",
+      "references": [{
+        "column": "fees.monthly_volume",
+        "matching": "used to calculate monthly volume for merchant"
+      }]
+    },
+    "day_of_year": {
+      "description": "day of year for the payment date",
+      "references": [{
+        "column": "fees.monthly_fraud_level",
+        "matching": "used to group payments by month for fraud calculation"
+      },
+      {
+        "column": "fees.monthly_volume",
+        "matching": "used to group payments by month for volume calculation"
+      }]
+    }
+  },
+  "acquirer_countries": {
+    "acquirer": {
+      "description": "acquirer bank name",
+      "references": [{
+        "column": "merchant_data.acquirer",
+        "matching": "acquirer should be in merchant_data.acquirer list"
+      }]
+    },
+    "country_code": {
+      "description": "two-letter country code",
+      "references": [{
+        "column": "payments.issuing_country",
+        "matching": "exact country code match"
+      },
+      {
+        "column": "payments.acquirer_country",
+        "matching": "exact country code match"
+      }]
+    }
+  },
+  "merchant_category_codes": {
+    "mcc": {
+      "description": "merchant category code as integer",
+      "references": [{
+        "column": "merchant_data.merchant_category_code",
+        "matching": "exact integer match"
+      },
+      {
+        "column": "fees.merchant_category_code",
+        "matching": "mcc should be in fees.merchant_category_code list"
+      }]
+    },
+    "description": {
+      "description": "human-readable description of the merchant category code",
+      "references": []
+    }
+  }
+}

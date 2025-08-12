@@ -24,6 +24,7 @@ def read_only_open(*a, **kw):
 
 def download_context(base_dir: str) -> str:
     ctx_files = [
+        "data/context/fee_matching.json",
         "data/context/acquirer_countries.csv",
         "data/context/payments.csv",
         "data/context/merchant_category_codes.csv",
@@ -32,13 +33,27 @@ def download_context(base_dir: str) -> str:
         "data/context/manual.md",
         "data/context/payments-readme.md"
     ]
-    for f in ctx_files:
-        hf_hub_download(REPO_ID, repo_type="dataset", filename=f, local_dir=base_dir, force_download=True)
-
+    
     root_dir = Path(__file__).resolve().parent.parent
-    full_path = Path(base_dir) / Path(ctx_files[0]).parent
-    relative_path = full_path.relative_to(root_dir)
-    return str(relative_path)
+    
+    # Check if files exist locally first
+    local_context_dir = root_dir / "data" / "context"
+    all_files_exist = all((local_context_dir / Path(f).name).exists() for f in ctx_files)
+    
+    if all_files_exist:
+        # Use local files
+        relative_path = local_context_dir.relative_to(root_dir)
+        return str(relative_path)
+    else:
+        # Download from HuggingFace if local files don't exist
+        for f in ctx_files:
+            local_file_path = Path(base_dir) / f
+            if not local_file_path.exists():
+                hf_hub_download(REPO_ID, repo_type="dataset", filename=f, local_dir=base_dir, force_download=False)
+        
+        full_path = Path(base_dir) / Path(ctx_files[0]).parent
+        relative_path = full_path.relative_to(root_dir)
+        return str(relative_path)
 
 def is_reasoning_llm(model_id: str) -> bool:
     reasoning_llm_list = [
