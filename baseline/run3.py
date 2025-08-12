@@ -159,7 +159,8 @@ def main():
         yaml.dump(args_dict, f, default_flow_style=False)
 
     # Load dataset with user-chosen split
-    data = datasets.load_dataset(REPO_ID, name="tasks", split=args.split, download_mode='force_redownload')
+    # data = datasets.load_dataset(REPO_ID, name="tasks", split=args.split, download_mode='force_redownload')
+    data = datasets.load_dataset(REPO_ID, name="tasks", split=args.split)
 
     if args.max_tasks >= 0 and args.tasks_ids is not None:
         logger.error(f"Can not provide {args.max_tasks=} and {args.tasks_ids=} at the same time")
