@@ -185,3 +185,6 @@ contact_info.jsonl
 *.tmp
 *.temp
 *~
+
+
+logs.txt
