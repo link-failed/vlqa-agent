@@ -159,7 +159,7 @@ def main():
     get_random_referred_id = load_referred_tasks_mapping()
     fee_matching_content = load_fee_matching_content()
 
-    runs_dir = Path().resolve() / "runs3"
+    runs_dir = Path().resolve() / "runs3-md"
     runs_dir.mkdir(parents=True, exist_ok=True)
     timestamp = time.time() if not args.timestamp else args.timestamp
     base_filename = runs_dir / f"{args.model_id.replace('/', '_').replace('.', '_')}/{args.split}/{int(timestamp)}"
