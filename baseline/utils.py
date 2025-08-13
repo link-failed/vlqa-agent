@@ -24,7 +24,7 @@ def read_only_open(*a, **kw):
 
 def download_context(base_dir: str) -> str:
     ctx_files = [
-        "data/context/fee_matching.json",
+        # "data/context/fee_matching.json",
         "data/context/acquirer_countries.csv",
         "data/context/payments.csv",
         "data/context/merchant_category_codes.csv",
