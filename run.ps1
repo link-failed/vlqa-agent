@@ -3,10 +3,10 @@
 # 定义命令列表
 $commands = @(
     'python baseline/run2-md.py --model-id "o3-mini" --use-azure-auth --max-tasks 450 --split default --concurrency 8',
-    'python baseline/run-md.py --model-id "o3-mini" --use-azure-auth --max-tasks 450 --split default --concurrency 8',
+    'python baseline/run-md.py  --model-id "o3-mini" --use-azure-auth --max-tasks 450 --split default --concurrency 8',
     'python baseline/run3-md.py --model-id "o3-mini" --use-azure-auth --max-tasks 450 --split default --concurrency 8',
     'python baseline/run2-md.py --model-id "gpt-4o" --use-azure-auth --max-tasks 450 --split default --concurrency 8',
-    'python baseline/run-md.py --model-id "gpt-4o" --use-azure-auth --max-tasks 450 --split default --concurrency 8'
+    'python baseline/run-md.py  --model-id "gpt-4o" --use-azure-auth --max-tasks 450 --split default --concurrency 8'
 )
 
 # 遍历执行
