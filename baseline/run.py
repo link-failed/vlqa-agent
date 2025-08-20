@@ -119,7 +119,7 @@ def main():
 
     ctx_path = download_context(str(Path().resolve()))
 
-    runs_dir = Path().resolve() / "runs"
+    runs_dir = Path().resolve() / "runs-free"
     runs_dir.mkdir(parents=True, exist_ok=True)
     timestamp = time.time() if not args.timestamp else args.timestamp
     base_filename = runs_dir / f"{args.model_id.replace('/', '_').replace('.', '_')}/{args.split}/{int(timestamp)}"

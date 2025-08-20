@@ -24,14 +24,22 @@ def read_only_open(*a, **kw):
 
 def download_context(base_dir: str) -> str:
     ctx_files = [
-        # "data/context/fee_matching.json",
         "data/context/acquirer_countries.csv",
         "data/context/payments.csv",
         "data/context/merchant_category_codes.csv",
         "data/context/fees.json",
         "data/context/merchant_data.json",
         "data/context/manual.md",
-        "data/context/payments-readme.md"
+        "data/context/payments-readme.md",
+        "data/context/5.md",
+        "data/context/49.md",
+        "data/context/1273.md",
+        "data/context/1305.md",
+        "data/context/1464.md",
+        "data/context/1681.md",
+        "data/context/1753.md",
+        "data/context/1871.md",
+        "data/context/2697.md"
     ]
     
     root_dir = Path(__file__).resolve().parent.parent
