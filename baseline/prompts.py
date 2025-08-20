@@ -71,8 +71,6 @@ You can find the most relevant solution from the following examples:
         * 1753.md: What are the applicable fee IDs for Belles_cookbook_store in March 2023?
         * 1871.md: In January 2023 what delta would Belles_cookbook_store pay if the relative fee of the fee with ID=384 changed to 1?
         * 2697.md: For Belles_cookbook_store in January, if we were to move the fraudulent transactions towards a different Authorization Characteristics Indicator (ACI) by incentivizing users to use a different interaction, what would be the preferred choice considering the lowest possible fees?
-{referred_examples}
-{relevant_table_info}
 
 Now Begin! If you solve the task correctly, you will receive a reward of $1,000,000.
 """
@@ -100,9 +98,6 @@ You can find the most relevant solution from the following examples:
         * 1753.md: What are the applicable fee IDs for Belles_cookbook_store in March 2023?
         * 1871.md: In January 2023 what delta would Belles_cookbook_store pay if the relative fee of the fee with ID=384 changed to 1?
         * 2697.md: For Belles_cookbook_store in January, if we were to move the fraudulent transactions towards a different Authorization Characteristics Indicator (ACI) by incentivizing users to use a different interaction, what would be the preferred choice considering the lowest possible fees?
-
-{referred_examples}
-{relevant_table_info}
 
 Before answering the question, reference any documentation in the data dir and leverage its information in your reasoning / planning.
 """
