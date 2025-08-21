@@ -40,28 +40,32 @@ logger = logging.getLogger(__name__)
 
 
 def load_referred_tasks_mapping():
-    """Load the mapping of task_id to referred task IDs from cluster_llm_based.csv"""
-    csv_path = Path(__file__).resolve().parent.parent / "data" / "task_cluster" / "cluster_llm_based.csv"
+    """Load the mapping of task_id to referred task IDs and level from clustered_llm_based.csv"""
+    csv_path = Path(__file__).resolve().parent.parent / "data" / "task_cluster" / "clustered_llm_based.csv"
     df = pd.read_csv(csv_path)
     mapping = {}
     
     for _, row in df.iterrows():
         task_id = str(row['task_id'])
         referred_str = str(row['referred'])
+        level = str(row['level'])
         
         try:
             if referred_str and referred_str != 'nan':
                 referred_ids = ast.literal_eval(referred_str)
-                mapping[task_id] = [str(ref_id) for ref_id in referred_ids] if isinstance(referred_ids, list) else []
+                mapping[task_id] = {
+                    'referred_ids': [str(ref_id) for ref_id in referred_ids] if isinstance(referred_ids, list) else [],
+                    'level': level
+                }
             else:
-                mapping[task_id] = []
+                mapping[task_id] = {'referred_ids': [], 'level': level}
         except:
-            mapping[task_id] = []
+            mapping[task_id] = {'referred_ids': [], 'level': level}
     
     return mapping
 
 
-def get_referred_trajectories(referred_ids: list[str]) -> str:
+def get_referred_trajectories(referred_ids: list[str], level: str = "", question: str = "") -> str:
     """Get the trajectory content for the referred task IDs"""
     if not referred_ids:
         return ""
@@ -76,7 +80,17 @@ def get_referred_trajectories(referred_ids: list[str]) -> str:
                 content = f.read()
             trajectories_content.append(f"=== Example Trajectory {ref_id} ===\n{content}\n")
     
-    return "\n".join(trajectories_content) if trajectories_content else ""
+    result = "\n".join(trajectories_content) if trajectories_content else ""
+    
+    # Append fee matching documentation for hard level tasks with "fee" in question
+    if level.lower() == "hard" and "fee" in question.lower():
+        fee_matching_path = Path(__file__).resolve().parent.parent / "data" / "context" / "fee_matching.md"
+        if fee_matching_path.exists():
+            with open(fee_matching_path, 'r', encoding='utf-8') as f:
+                fee_content = f.read()
+            result += f"\n\n=== fee.json schema ===\n{fee_content}\n"
+    
+    return result
 
 
 def parse_args():
@@ -108,8 +122,10 @@ def run_single_task(
         referred_mapping: dict
 ):
     task_id = str(task["task_id"])
-    referred_ids = referred_mapping.get(task_id, [])
-    referred_examples = get_referred_trajectories(referred_ids)
+    task_info = referred_mapping.get(task_id, {'referred_ids': [], 'level': ''})
+    referred_ids = task_info['referred_ids']
+    level = task_info['level']
+    referred_examples = get_referred_trajectories(referred_ids, level, task["question"])
 
     if is_reasoning_llm(model_id):
         prompt = reasoning_llm_task_prompt.format(
