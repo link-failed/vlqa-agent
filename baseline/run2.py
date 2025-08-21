@@ -90,6 +90,22 @@ def get_referred_trajectories(referred_ids: list[str], level: str = "", question
                 fee_content = f.read()
             result += f"\n\n=== fee.json schema ===\n{fee_content}\n"
     
+    # Append payments documentation for hard level tasks with "pay" in question
+    if level.lower() == "hard" and "pay" in question.lower():
+        payments_path = Path(__file__).resolve().parent.parent / "data" / "context" / "payments.md"
+        if payments_path.exists():
+            with open(payments_path, 'r', encoding='utf-8') as f:
+                payments_content = f.read()
+            result += f"\n\n=== payments.csv schema ===\n{payments_content}\n"
+    
+    # Append merchant documentation for hard level tasks with "merchant" in question
+    if level.lower() == "hard" and "merchant" in question.lower():
+        merchant_path = Path(__file__).resolve().parent.parent / "data" / "context" / "merchant_data.md"
+        if merchant_path.exists():
+            with open(merchant_path, 'r', encoding='utf-8') as f:
+                merchant_content = f.read()
+            result += f"\n\n=== merchant_data.md schema ===\n{merchant_content}\n"
+
     return result
 
 
