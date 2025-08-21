@@ -40,8 +40,8 @@ logger = logging.getLogger(__name__)
 
 
 def load_referred_tasks_mapping():
-    """Load the mapping of task_id to referred task IDs from clustered_single_semi_2.csv"""
-    csv_path = Path(__file__).resolve().parent.parent / "data" / "task_cluster" / "clustered_single_semi_2.csv"
+    """Load the mapping of task_id to referred task IDs from cluster_llm_based.csv"""
+    csv_path = Path(__file__).resolve().parent.parent / "data" / "task_cluster" / "cluster_llm_based.csv"
     df = pd.read_csv(csv_path)
     mapping = {}
     
@@ -115,7 +115,7 @@ def run_single_task(
         prompt = reasoning_llm_task_prompt.format(
             question=task["question"],
             guidelines=task["guidelines"],
-            referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else ""
+            referred_examples=f"\nExamples trajectory:\n{referred_examples}" if referred_examples else ""
         )
         agent = create_code_agent_with_reasoning_llm(model_id, api_base, api_key, max_steps, ctx_path, use_azure_auth)
         prompt = agent.system_prompt + "\n" + prompt
@@ -125,7 +125,7 @@ def run_single_task(
             ctx_path=ctx_path,
             question=task["question"],
             guidelines=task["guidelines"],
-            referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else ""
+            referred_examples=f"\nExample trajectory:\n{referred_examples}" if referred_examples else ""
         )
         agent = create_code_agent_with_chat_llm(model_id, api_base, api_key, max_steps, use_azure_auth)
 
@@ -154,7 +154,7 @@ def main():
     ctx_path = download_context(str(Path().resolve()))
     referred_mapping = load_referred_tasks_mapping()
 
-    runs_dir = Path().resolve() / "runs2"
+    runs_dir = Path().resolve() / "runs2-free"
     runs_dir.mkdir(parents=True, exist_ok=True)
     timestamp = time.time() if not args.timestamp else args.timestamp
     base_filename = runs_dir / f"{args.model_id.replace('/', '_').replace('.', '_')}/{args.split}/{int(timestamp)}"
