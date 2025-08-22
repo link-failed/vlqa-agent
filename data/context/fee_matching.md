@@ -75,15 +75,11 @@ This document describes how to match fee conditions against payment and merchant
 
 1. **Null/Empty Values**: When a fee condition is null or empty, it acts as a wildcard and matches all possible values for that field.
 
-2. **Multiple Conditions**: All specified conditions must be satisfied for a fee to apply (AND logic).
-
-3. **Data Lookups**: Some conditions require joining data from multiple sources:
+2. **Data Lookups**: Some conditions require joining data from multiple sources:
    - Merchant information requires looking up merchant_data.json using the merchant identifier
    - Monthly calculations require aggregating data by month using day_of_year
 
-4. **Calculation Requirements**: Some conditions require real-time calculations:
+3. **Calculation Requirements**: Some conditions require real-time calculations:
    - Monthly fraud level percentage
    - Monthly transaction volume
    - Intracountry status determination
-
-5. **Exact Matching**: List-based conditions require exact string matching, not partial or fuzzy matching.

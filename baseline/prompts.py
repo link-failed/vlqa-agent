@@ -61,16 +61,7 @@ reasoning_llm_task_prompt = """
 
 You must follow these guidelines when you produce your final answer: {guidelines}
 
-You can find the most relevant solution from the following examples:
-        * 5.md: Which issuing country has the highest number of transactions?
-        * 49.md: What is the top country (ip_country) for fraud? A. NL, B. BE, C. ES, D. FR
-        * 1273.md: For credit transactions, what would be the average fee that the card scheme GlobalCard would charge for a transaction value of 10 EUR?
-        * 1305.md: For account type H and the MCC description: Eating Places and Restaurants, what would be the average fee that the card scheme GlobalCard would charge for a transaction value of 10 EUR? Provide the answer in EUR and 6 decimals.
-        * 1464.md: What is the fee ID or IDs that apply to account_type = R and aci = B?
-        * 1681.md: For the 10th of the year 2023, what are the Fee IDs applicable to Belles_cookbook_store?
-        * 1753.md: What are the applicable fee IDs for Belles_cookbook_store in March 2023?
-        * 1871.md: In January 2023 what delta would Belles_cookbook_store pay if the relative fee of the fee with ID=384 changed to 1?
-        * 2697.md: For Belles_cookbook_store in January, if we were to move the fraudulent transactions towards a different Authorization Characteristics Indicator (ACI) by incentivizing users to use a different interaction, what would be the preferred choice considering the lowest possible fees?
+{referred_examples}
 
 Now Begin! If you solve the task correctly, you will receive a reward of $1,000,000.
 """
@@ -88,16 +79,7 @@ Here is the question you need to answer: {question}
 
 Here are the guidelines you MUST follow when answering the question above: {guidelines}
 
-You can find the most relevant solution from the following examples:
-        * 5.md: Which issuing country has the highest number of transactions?
-        * 49.md: What is the top country (ip_country) for fraud? A. NL, B. BE, C. ES, D. FR
-        * 1273.md: For credit transactions, what would be the average fee that the card scheme GlobalCard would charge for a transaction value of 10 EUR?
-        * 1305.md: For account type H and the MCC description: Eating Places and Restaurants, what would be the average fee that the card scheme GlobalCard would charge for a transaction value of 10 EUR? Provide the answer in EUR and 6 decimals.
-        * 1464.md: What is the fee ID or IDs that apply to account_type = R and aci = B?
-        * 1681.md: For the 10th of the year 2023, what are the Fee IDs applicable to Belles_cookbook_store?
-        * 1753.md: What are the applicable fee IDs for Belles_cookbook_store in March 2023?
-        * 1871.md: In January 2023 what delta would Belles_cookbook_store pay if the relative fee of the fee with ID=384 changed to 1?
-        * 2697.md: For Belles_cookbook_store in January, if we were to move the fraudulent transactions towards a different Authorization Characteristics Indicator (ACI) by incentivizing users to use a different interaction, what would be the preferred choice considering the lowest possible fees?
+{referred_examples}
 
 Before answering the question, reference any documentation in the data dir and leverage its information in your reasoning / planning.
 """
