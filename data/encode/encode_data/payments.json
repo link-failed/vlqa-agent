@@ -1,0 +1,193 @@
+{
+  "psp_reference": {
+    "description": "Unique identifier for each payment transaction, used for tracking and reconciliation.",
+    "domain_knowledge": [
+      "Each payment is assigned a unique reference for traceability and dispute resolution."
+    ],
+    "data_type": "string",
+    "data_sample": ["20034594130", "36926127356"]
+  },
+  "merchant": {
+    "description": "Name of the merchant processing the transaction; may be a brand or platform.",
+    "possible_relationships": [{
+      "column": "merchant_data.merchant",
+      "relationship": "exact match against merchant names"
+  }],
+    "domain_knowledge": [
+      "Merchant names are used for reporting, analytics, and fee calculation.",
+      "Merchant names may be mapped to merchant category codes (MCC) for risk and pricing."
+    ],
+    "data_type": "string",
+    "data_sample": ["Crossfit_Hanna", "Belles_cookbook_store", "Golfclub_Baron_Friso"]
+  },
+  "card_scheme": {
+    "description": "Card network or scheme used for the transaction (e.g., MasterCard, Visa, Amex, Other).",
+    "domain_knowledge": [
+      "Card schemes determine network rules, interchange rates, and acceptance policies."
+    ],
+    "data_type": "string",
+    "data_sample": ["NexPay", "GlobalCard", "SwiftCharge", "TransactPlus"]
+  },
+  "year": {
+    "description": "Year when the payment was initiated.",
+    "domain_knowledge": [
+      "Year is used for time-based reporting and trend analysis."
+    ],
+    "data_type": "integer",
+    "data_sample": [2023]
+  },
+  "hour_of_day": {
+    "description": "Hour of the day (0-23) when the payment was initiated.",
+    "domain_knowledge": [
+      "Hour of payment can reveal peak transaction times and consumer behavior."
+    ],
+    "data_type": "integer",
+    "data_sample": [16, 23, 4, 3]
+  },
+  "minute_of_hour": {
+    "description": "Minute of the hour (0-59) when the payment was initiated.",
+    "domain_knowledge": [
+      "Minute granularity can be useful for fraud detection and system monitoring."
+    ],
+    "data_type": "integer",
+    "data_sample": [21, 58, 30, 5]
+  },
+  "day_of_year": {
+    "description": "Day of the year (1-366) when the payment was initiated.",
+    "domain_knowledge": [
+      "Day of year is used for aggregating transactions by month or season."
+    ],
+    "data_type": "integer",
+    "data_sample": [12, 75, 96, 77]
+  },
+  "is_credit": {
+    "description": "Boolean indicator if the transaction used a credit card (True) or not (False). Values are 'True' or 'False' as strings in the CSV.",
+    "domain_knowledge": [
+      "Credit transactions may incur higher fees and different risk profiles than debit.",
+      "Fee rules may depend on whether the transaction is credit or debit."
+    ],
+    "data_type": "string",
+    "data_sample": ["True", "False"]
+  },
+  "eur_amount": {
+    "description": "Transaction amount in euros.",
+    "domain_knowledge": [
+      "Transaction value is used for fee calculation, reporting, and risk assessment."
+    ],
+    "data_type": "float",
+    "data_sample": [151.74, 45.7, 14.11, 238.42]
+      ,
+      "possible_formulas": [
+          "monthly_volume = sum(eur_amount) over month by merchant"
+      ]
+  },
+  "ip_country": {
+    "description": "Country where the shopper was located at the time of transaction, determined by IP address.",
+    "domain_knowledge": [
+      "IP country can be used for fraud detection, compliance, and geo-based analytics."
+    ],
+    "data_type": "string",
+    "data_sample": ["SE", "NL", "LU", "IT", "BE", "FR", "GR", "ES"]
+  },
+  "issuing_country": {
+    "description": "Country of the bank that issued the card used in the transaction.",
+    "domain_knowledge": [
+      "Issuing country is used to determine if a transaction is domestic or cross-border, impacting fees and risk."
+    ],
+    "data_type": "string",
+    "data_sample": ["SE", "NL", "LU", "IT", "BE", "FR", "GR", "ES"]
+      ,
+      "possible_formulas": [
+          "intracountry = 1.0 if issuing_country == acquirer_country else 0.0"
+      ]
+  },
+  "device_type": {
+    "description": "Type of device used by the shopper (e.g., Windows, Linux, MacOS, iOS, Android, Other).",
+    "domain_knowledge": [
+      "Device type can indicate channel (mobile, desktop) and is useful for fraud analytics."
+    ],
+    "data_type": "string",
+    "data_sample": ["Windows", "Linux", "MacOS", "iOS", "Android", "Other"]
+  },
+  "ip_address": {
+    "description": "Hashed value of the shopper's IP address for privacy and tracking.",
+    "domain_knowledge": [
+      "IP address is anonymized for privacy but can be used for session tracking and fraud detection."
+    ],
+    "data_type": "string",
+    "data_sample": ["pKPYzJqqwB8TdpY0jiAeQw", "uzUknOkIqExYsWv4X14GUg", "3VO1v_RndDg6jzEiPjfvoQ"]
+  },
+  "email_address": {
+    "description": "Hashed value of the shopper's email address for privacy and deduplication.",
+    "domain_knowledge": [
+      "Email address is anonymized for privacy and can be used for identifying repeat customers or fraud."
+    ],
+    "data_type": "string",
+    "data_sample": ["0AKXyaTjW7H4m1hOWmOKBQ", "_Gm8at1k2ojYAM_wSEptNw", "hzw3CbkxazpVg38re7jchQ"]
+  },
+  "card_number": {
+    "description": "Hashed value of the card number for privacy and security.",
+    "domain_knowledge": [
+      "Card number is hashed to protect sensitive data and prevent misuse."
+    ],
+    "data_type": "string",
+    "data_sample": ["uRofX46FuLUrSOTz8AW5UQ", "6vqQ89zfCeFk6s4VOoWZFQ", "EmxSN8-GXQw3RG_2v7xKxQ"]
+  },
+  "shopper_interaction": {
+    "description": "Type of shopper interaction: 'Ecommerce' (online) or 'POS' (in-person/in-store).",
+    "domain_knowledge": [
+      "Shopper interaction type affects risk, authentication requirements, and fee structure."
+    ],
+    "data_type": "string",
+    "data_sample": ["Ecommerce", "POS"]
+  },
+  "card_bin": {
+    "description": "Bank Identification Number (BIN) of the card, used to identify issuing bank and card type.",
+    "domain_knowledge": [
+      "BIN is used for card scheme routing, fraud detection, and analytics."
+    ],
+    "data_type": "string",
+    "data_sample": ["4802", "4920", "4571", "4017"]
+  },
+  "has_fraudulent_dispute": {
+    "description": "Boolean indicator if the transaction was disputed as fraudulent by the issuing bank. Values are 'True' or 'False' as strings in the CSV.",
+    "domain_knowledge": [
+      "Fraudulent disputes impact merchant fees, risk scoring, and may trigger reviews."
+    ],
+    "data_type": "string",
+    "data_sample": ["True", "False"]
+      ,
+      "possible_formulas": [
+          "monthly_fraud_rate = sum(has_fraudulent_dispute == 'True') / count(*) over month by merchant"
+      ]
+  },
+  "is_refused_by_adyen": {
+    "description": "Boolean indicator if the transaction was refused by Adyen (the payment processor). Values are 'True' or 'False' as strings in the CSV.",
+    "domain_knowledge": [
+      "Refusals may be due to risk, compliance, or technical issues and are important for monitoring approval rates."
+    ],
+    "data_type": "string",
+    "data_sample": ["True", "False"]
+  },
+  "aci": {
+    "description": "Authorization Characteristics Indicator (ACI) code describing transaction authentication context.",
+    "domain_knowledge": [
+      "ACI codes indicate card presence, authentication method, and risk level.",
+      "Correct ACI selection can optimize fees and reduce transaction friction."
+    ],
+    "data_type": "string",
+    "data_sample": ["F", "D", "G", "E", "B", "A"]
+  },
+  "acquirer_country": {
+    "description": "Country where the acquiring bank (the merchant's bank) is located.",
+    "domain_knowledge": [
+      "Acquirer country is used to determine if a transaction is local or cross-border, impacting fees and compliance."
+    ],
+    "data_type": "string",
+    "data_sample": ["NL", "SE", "IT", "LU", "BE", "FR", "GR", "ES"]
+      ,
+      "possible_formulas": [
+          "intracountry = 1.0 if issuing_country == acquirer_country else 0.0"
+      ]
+  }
+}

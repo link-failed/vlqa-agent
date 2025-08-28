@@ -1,0 +1,18 @@
+{
+  "mcc": {
+    "data_type": "integer",
+    "data_sample": [1520, 5812, 7997],
+    "description": "Merchant Category Code (MCC), a four-digit number assigned to a business by card networks.",
+    "domain_knowledge": "MCC is used to categorize business type, affects risk, fraud, and fees. First two digits: category; last two: subcategory."
+  },
+  "description": {
+    "data_type": "string",
+    "data_sample": [
+      "General Contractors - Residential and Commercial",
+      "Eating Places and Restaurants",
+      "Membership Clubs (Sports, Recreation, Athletic), Country Clubs, and Private Golf Courses"
+    ],
+    "description": "Text description of the merchant category.",
+    "domain_knowledge": "Defined by MCC, describes merchant business type."
+  }
+}

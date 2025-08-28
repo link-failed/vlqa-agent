@@ -1,0 +1,152 @@
+{
+  "merchant_category_code": {
+    "data_type": "list of integers or null",
+    "data_sample": [[8062, 8011, 8021], null],
+    "description": "List of merchant category codes; null means applies to all MCCs",
+    "possible_relationships": [
+      {
+        "column": "merchant_data.mcc",
+        "relationship": "match if the mcc is in the list or the list is empty"
+      },
+      {
+        "column": "payments.merchant",
+        "relationship": "lookup mcc based on merchant name"
+      }
+    ],
+    "domain_knowledge": [
+      "MCC (Merchant Category Code) is a four-digit code assigned by card networks to categorize merchant business type, following ISO 18245 standard.",
+      "MCC affects payment processing rates, risk assessment, fraud detection, and accounting.",
+      "MCC is used to determine applicable interchange rates and fee schedules.",
+      "A complete list of MCCs is available in merchant_category_codes.csv."
+    ]
+  },
+  "monthly_fraud_level": {
+    "data_type": "string (percentage range) or null",
+    "data_sample": ["7.7%-8.3%", "<3%", null],
+    "description": "Range of percentage = fraudulent transactions / total transactions in a month; null means applies to all levels",
+    "possible_relationships": [
+      {
+        "columns": ["payments.has_fraudulent_dispute", "payments.day_of_year"],
+        "relationship": "calculate percentage and check if within defined range"
+      }
+    ],
+    "possible_formulas": [
+      "monthly_fraud_rate = sum(has_fraudulent_dispute == 'True') / count(*) over month by merchant"
+    ],
+    "domain_knowledge": [
+      "Fraud level is the ratio of fraudulent volume to total volume, measured monthly.",
+      "Higher fraud rates increase processing costs and may trigger account review or penalties.",
+      "Maintaining low fraud levels is essential to minimize fees and avoid penalties.",
+      "Best practices include using AVS, CVV, 3D Secure, and risk engines to reduce fraud."
+    ]
+  },
+  "monthly_volume": {
+    "data_type": "string (euro range) or null",
+    "data_sample": ["100k-1m", null],
+    "description": "Range of total transaction amount in a month per merchant; null means applies to all volumes",
+    "possible_relationships": [
+      {
+        "columns": ["payments.eur_amount", "day_of_year"],
+        "relationship": "aggregate monthly total and check if within range"
+      }
+    ],
+    "possible_formulas": [
+      "monthly_volume = sum(eur_amount) over month by merchant"
+    ],
+    "domain_knowledge": [
+      "Monthly transaction volume per merchant determines eligibility for tiered pricing models.",
+      "Higher volumes typically result in lower per-transaction fees due to economies of scale.",
+      "No minimum volume is required, but larger volumes flatten the pricing curve for better rates."
+    ]
+  },
+  "is_credit": {
+    "data_type": "boolean or null",
+    "data_sample": [true, false, null],
+    "description": "Boolean: true if payment is by credit card; null means applies to all",
+    "possible_relationships": [
+      {
+        "column": "payments.is_credit",
+        "relationship": "convert both into boolean and match the value"
+      }
+    ],
+    "domain_knowledge": [
+      "Credit card transactions often incur higher interchange and processing fees than debit.",
+      "Fee rules may specifically target credit transactions for higher rates."
+    ]
+  },
+  "intracountry": {
+    "data_type": "float (1.0 or 0.0) or null",
+    "data_sample": [1.0, 0.0, null],
+    "description": "1.0 if issuing_country == acquirer_country, else 0.0; null means applies to all",
+    "possible_relationships": [
+      {
+        "columns": ["payments.issuing_country", "payments.acquirer_country"],
+        "relationship": "compare to get the boolean value"
+      }
+    ],
+    "possible_formulas": [
+      "intracountry = 1.0 if issuing_country == acquirer_country else 0.0"
+    ],
+    "domain_knowledge": [
+      "Intracountry (domestic) transactions occur when issuing and acquiring countries are the same.",
+      "Local acquiring reduces transaction friction, improves conversion, and lowers fees.",
+      "Cross-border payments may incur additional fees, currency conversion, and compliance checks."
+    ]
+  },
+  "aci": {
+    "data_type": "list of strings or empty list",
+    "data_sample": [["A", "B", "C"], []],
+    "description": "List of ACI codes; empty means applies to all",
+    "possible_relationships": [
+      {
+        "column": "payments.aci",
+        "relationship": "match if the aci is in the list or the list is empty"
+      }
+    ],
+    "domain_knowledge": [
+      "ACI (Authorization Characteristics Indicator) categorizes transaction authentication and flow.",
+      "Different ACI codes reflect card presence, authentication method, and risk level.",
+      "Choosing the right ACI can optimize fees and reduce transaction friction."
+    ]
+  },
+  "account_type": {
+    "data_type": "list of strings or empty list",
+    "data_sample": [["R", "D", "H"], []],
+    "description": "List of account types; empty means applies to all",
+    "possible_relationships": [
+      {
+        "column": "merchant_data.account_type",
+        "relationship": "match if the account_type is in the list or the list is empty"
+      },
+      {
+        "column": "merchant_data.merchant",
+        "relationship": "lookup account_type based on merchant name"
+      },
+      {
+        "column": "merchant_data.account_type",
+        "relationship": "exact match against list values"
+      }
+    ],
+    "domain_knowledge": [
+      "Account type classifies merchants by business model (e.g., Retail, Digital, Hospitality, Franchise, SaaS, Other).",
+      "Account type impacts fee schedules, settlement times, and support services.",
+      "See manual.md for account type definitions."
+    ]
+  },
+  "capture_delay": {
+    "data_type": "string (range or label) or null",
+    "data_sample": ["<3", "3-5", "manual", null],
+    "description": "Range of integers (e.g., '<3', '3-5') or string (e.g., 'manual'); null means applies to all",
+    "possible_relationships": [
+      {
+        "column": "merchant_data.capture_delay",
+        "relationship": "if range, check if capture_delay falls within range; if not, exact match"
+      }
+    ],
+    "domain_knowledge": [
+      "Capture delay is the time from authorization to settlement (e.g., '<3', '3-5', 'immediate', 'manual').",
+      "Faster capture (shorter delay) may increase fees but improves cash flow.",
+      "Late settlement can cause transaction downgrades and higher costs."
+    ]
+  }
+}
