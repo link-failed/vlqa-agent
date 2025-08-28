@@ -25,7 +25,8 @@ class LLMClusterer:
         ref_text = "\n".join([f"{ref_id} ({ref_level}): {question}" 
                              for ref_id, question, ref_level in zip(reference_ids, reference_questions, reference_levels)])
         
-        return f"""Find 1-3 most similar reference questions that could help solve this question.
+        return f"""Find 1-3 most similar reference questions that could help solve this question. 
+        If you believe one reference question is helpful enough, no need to find more. For example, if the question and one reference question are both "What were the applicable Fee IDs for some_merchant in some_month 2023?", you will only need to return this refernce question because it alone will be helpful enough.
 
 REFERENCE QUESTIONS:
 {ref_text}
@@ -94,18 +95,43 @@ Return JSON with 1-3 most similar reference IDs:
         questions = df['question'].astype(str).str.strip().tolist()
         levels = df['level'].astype(str).str.strip().tolist()
         
-        reference_questions = reference_df['question'].astype(str).str.strip().tolist()
-        reference_ids = reference_df['task_id'].tolist()
-        reference_levels = reference_df['level'].astype(str).str.strip().tolist()
+        print(f"Clustering {len(questions)} questions with {len(reference_df)} total references")
         
-        print(f"Clustering {len(questions)} questions with {len(reference_questions)} references")
+        results = []
         
-        results = self.cluster_questions(questions, levels, reference_questions, reference_ids, reference_levels)
+        # Process each question individually with level-filtered references
+        for i, (question, level) in enumerate(zip(questions, levels)):
+            print(f"Processing question {i+1}/{len(questions)} (level: {level})...")
+            
+            # Filter reference questions to same level only
+            level_mask = reference_df['level'].astype(str).str.strip() == level
+            level_filtered_df = reference_df[level_mask]
+            
+            if len(level_filtered_df) == 0:
+                print(f"Warning: No reference questions found for level '{level}', using fallback")
+                # Use first two reference questions as fallback
+                results.append({
+                    "question": i + 1,
+                    "similar_ids": reference_df['task_id'].tolist()[:2]
+                })
+                continue
+            
+            reference_questions = level_filtered_df['question'].astype(str).str.strip().tolist()
+            reference_ids = level_filtered_df['task_id'].tolist()
+            reference_levels = level_filtered_df['level'].astype(str).str.strip().tolist()
+            
+            print(f"  Found {len(reference_questions)} reference questions for level '{level}'")
+            
+            # Process single question with level-filtered references
+            single_result = self.cluster_questions([question], [level], reference_questions, reference_ids, reference_levels)
+            results.extend(single_result)
         
         df_output = df.copy()
         
-        # Create mapping from reference_ids to reference_questions
-        id_to_question = dict(zip(reference_ids, reference_questions))
+        # Create mapping from all reference_ids to reference_questions
+        all_reference_questions = reference_df['question'].astype(str).str.strip().tolist()
+        all_reference_ids = reference_df['task_id'].tolist()
+        id_to_question = dict(zip(all_reference_ids, all_reference_questions))
         
         clusters = []
         referred = []
