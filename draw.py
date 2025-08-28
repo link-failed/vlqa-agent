@@ -4,10 +4,7 @@ This script constructs a directed graph showing relationships between all column
 Task 1681: Complex fee matching with monthly volume/fraud calculations
 Task 1464: Simple fee matching based on account_type and aci only
 Task 1753: Fee matching for specific merchant (Belles_cookbook_store) in March 2023
-Task 1871: Fee computation with rate changes for specifi        print(f"Graph Statistics:")
-        print(f"- Total nodes: {self.G.number_of_nodes()}")
-        print(f"- Total edges: {self.G.number_of_edges()}")
-        print(f"- Is connected: {nx.is_connected(self.G)}")rchant and time period
+Task 1871: Fee computation with rate changes for specific merchant and time period
 """
 
 import networkx as nx
@@ -86,9 +83,9 @@ class FieldDependencyGraph:
             
             # compute/intermediate fields
             'compute.target_month': {'type': 'compute', 'file': 'compute'},
-            'compute.transaction_intracountry': {'type': 'compute', 'file': 'compute'},
-            'compute.total_volume': {'type': 'compute', 'file': 'compute'},
-            'compute.monthly_fraud_level': {'type': 'compute', 'file': 'compute'},
+            # 'compute.transaction_intracountry': {'type': 'compute', 'file': 'compute'},
+            # 'compute.monthly_volume': {'type': 'compute', 'file': 'compute'},
+            # 'compute.monthly_fraud_level': {'type': 'compute', 'file': 'compute'},
             'compute.fee': {'type': 'compute', 'file': 'compute'},
             
             # Output field - the answer to both tasks
@@ -113,6 +110,7 @@ class FieldDependencyGraph:
 
             # Payments info lookup
             ('payments.merchant', 'payments.aci'),
+            ('payments.merchant', 'payments.eur_amount'),  # Merchant is associated with payment amounts
             
             # Get merchant attributes for fee matching
             ('merchant_data.merchant', 'merchant_data.capture_delay'),
@@ -124,18 +122,14 @@ class FieldDependencyGraph:
             ('merchant_category_codes.mcc', 'merchant_category_codes.description'),
             
             # Monthly fraud level calculation: compute from merchant, day_of_year, year and fraud dispute data
-            ('payments.merchant', 'compute.monthly_fraud_level'),
-            ('compute.target_month', 'compute.monthly_fraud_level'),
-            ('payments.has_fraudulent_dispute', 'compute.monthly_fraud_level'),
-            
-            # Transaction volume calculation for monthly totals: merchant, time period, and amount
-            ('payments.merchant', 'compute.total_volume'),
-            ('compute.target_month', 'compute.total_volume'),
-            ('payments.eur_amount', 'compute.total_volume'),
-            
-            # Intracountry calculation: issuing_country and acquirer_country used to compute intracountry status
-            ('payments.issuing_country', 'compute.transaction_intracountry'),
-            ('payments.acquirer_country', 'compute.transaction_intracountry'),
+            ('payments.merchant', 'fees.monthly_fraud_level'),
+            ('payments.merchant', 'fees.monthly_volume'),
+            ('compute.target_month', 'fees.monthly_fraud_level'),
+            ('compute.target_month', 'fees.monthly_volume'),
+            ('payments.has_fraudulent_dispute', 'fees.monthly_fraud_level'),
+
+            ('payments.issuing_country', 'fees.intracountry'),
+            ('payments.acquirer_country', 'fees.intracountry'),
             
             ('fees.aci', 'fees.ID'),
             ('payments.aci', 'fees.aci'),
@@ -146,7 +140,6 @@ class FieldDependencyGraph:
             ('payments.is_credit', 'fees.is_credit'),
             ('fees.is_credit', 'fees.ID'),
             
-            ('compute.transaction_intracountry', 'fees.intracountry'),
             ('fees.intracountry', 'fees.ID'),
             
             ('merchant_data.capture_delay', 'fees.capture_delay'),
@@ -157,8 +150,7 @@ class FieldDependencyGraph:
             
             ('merchant_data.merchant_category_code', 'fees.ID'),
             ('fees.merchant_category_code', 'fees.ID'),
-            
-            ('compute.monthly_fraud_level', 'fees.monthly_fraud_level'),
+
             ('fees.monthly_fraud_level', 'fees.ID'),
 
             ('fees.monthly_volume', 'fees.ID'),
@@ -308,12 +300,13 @@ class FieldDependencyGraph:
         ]
         plt.legend(handles=legend_elements, loc='lower right', bbox_to_anchor=(1, 0), fontsize=12)
 
-    def visualize_graph(self, save_path: str = None):
+    def visualize_graph(self, save_path: str = None, show: bool = True):
         """
         Create a visualization of the field dependency graph with color coding and curved edges.
         
         Args:
             save_path: Optional path to save the visualization
+            show: Whether to display the graph (default True)
         """
         plt.figure(figsize=(16, 12))  # Better size for MacBook display
         
@@ -330,7 +323,78 @@ class FieldDependencyGraph:
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
         
-        plt.show()
+        if show:
+            plt.show()
+        else:
+            plt.close()  # Close the figure to free memory if not showing
+
+    def visualize_subgraph(self, reachable_nodes: Set[str], save_path: str = None, show: bool = True):
+        """
+        Create a visualization of a subgraph containing only the specified nodes.
+        
+        Args:
+            reachable_nodes: Set of nodes to include in the subgraph
+            save_path: Optional path to save the visualization
+            show: Whether to display the graph (default True)
+        """
+        # Create subgraph with only reachable nodes
+        subgraph = self.G.subgraph(reachable_nodes).copy()
+        
+        plt.figure(figsize=(14, 10))  # Slightly smaller for subgraph
+        
+        # Create layout for subgraph - use spring layout for better automatic positioning
+        pos = nx.spring_layout(subgraph, k=3, iterations=50, seed=42)
+        
+        # Draw nodes by file type with different colors
+        for file_type in ['payments', 'merchant_data', 'fees', 'merchant_category_codes']:
+            node_list = [node for node in reachable_nodes if node in self.nodes and self.nodes[node].get('file') == file_type]
+            if node_list:
+                nx.draw_networkx_nodes(subgraph, pos, nodelist=node_list, 
+                                      node_color=self.colors[file_type], node_size=2500, 
+                                      edgecolors='black', linewidths=1)
+        
+        # Draw compute nodes
+        compute_node_list = [node for node in reachable_nodes if node in self.nodes and self.nodes[node]['type'] == 'compute']
+        if compute_node_list:
+            nx.draw_networkx_nodes(subgraph, pos, nodelist=compute_node_list, 
+                                  node_color=self.colors['compute'], node_size=2500, 
+                                  edgecolors='black', linewidths=1)
+        
+        # Draw edges
+        nx.draw_networkx_edges(subgraph, pos, edge_color='#2E86AB', width=1.5, alpha=0.7)
+        
+        # Draw labels with better formatting
+        labels = {}
+        for node in subgraph.nodes():
+            parts = node.split('.')
+            if len(parts) == 2:
+                labels[node] = f"{parts[0]}\n.{parts[1]}"
+            else:
+                labels[node] = node
+        
+        nx.draw_networkx_labels(subgraph, pos, labels, font_size=8, font_weight='bold')
+        
+        # Draw legend
+        legend_elements = [
+            plt.Rectangle((0, 0), 1, 1, facecolor=self.colors['payments'], edgecolor='black', label='payments.csv'),
+            plt.Rectangle((0, 0), 1, 1, facecolor=self.colors['merchant_data'], edgecolor='black', label='merchant_data.json'),
+            plt.Rectangle((0, 0), 1, 1, facecolor=self.colors['fees'], edgecolor='black', label='fees.json'),
+            plt.Rectangle((0, 0), 1, 1, facecolor=self.colors['merchant_category_codes'], edgecolor='black', label='merchant_category_codes.csv'),
+            plt.Rectangle((0, 0), 1, 1, facecolor=self.colors['compute'], edgecolor='black', label='computation')
+        ]
+        plt.legend(handles=legend_elements, loc='lower right', bbox_to_anchor=(1, 0), fontsize=10)
+        
+        plt.title(f"Subgraph with {len(reachable_nodes)} nodes", fontsize=14, fontweight='bold')
+        plt.axis('off')
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        if show:
+            plt.show()
+        else:
+            plt.close()  # Close the figure to free memory if not showing
 
     def find_reachable_nodes(self, input_fields: List[str], output_fields: List[str] = None) -> Set[str]:
         """
@@ -534,14 +598,17 @@ class FieldDependencyGraph:
             'output_fields': output_fields or []
         }
 
-    def print_reachable_analysis(self, input_fields: List[str], output_fields: List[str], reachable_nodes: Set[str]):
+    def print_reachable_analysis(self, input_fields: List[str], output_fields: List[str], reachable_nodes: Set[str]) -> Dict[str, List[str]]:
         """
-        Print detailed analysis of reachable nodes from given input fields to output fields.
+        Print detailed analysis of reachable nodes from given input fields to output fields and return adjacency dict.
         
         Args:
             input_fields: List of input nodes
             output_fields: List of output nodes (can be empty)
             reachable_nodes: Set of reachable nodes
+            
+        Returns:
+            Dictionary mapping each reachable node to its list of adjacent nodes within the subgraph
         """
         print("="*80)
         print("REACHABLE NODES ANALYSIS")
@@ -558,28 +625,17 @@ class FieldDependencyGraph:
         print(f"Total reachable nodes: {len(reachable_nodes)}")
         print(f"Percentage of graph reachable: {len(reachable_nodes) / len(self.nodes) * 100:.1f}%")
         
-        # Group reachable nodes by type and file
-        reachable_by_type = {}
-        reachable_by_file = {}
+        # Create adjacency dictionary for reachable nodes
+        adjacency_dict = self.get_subgraph_adjacency_list(reachable_nodes)
         
+        # Group reachable nodes by file for display
+        reachable_by_file = {}
         for node in reachable_nodes:
             if node in self.nodes:
-                node_type = self.nodes[node]['type']
                 node_file = self.nodes[node]['file']
-                
-                if node_type not in reachable_by_type:
-                    reachable_by_type[node_type] = []
-                reachable_by_type[node_type].append(node)
-                
                 if node_file not in reachable_by_file:
                     reachable_by_file[node_file] = []
                 reachable_by_file[node_file].append(node)
-        
-        print(f"\nReachable nodes by type:")
-        for node_type, node_list in reachable_by_type.items():
-            print(f"\n{node_type.upper()} ({len(node_list)}):")
-            for node in sorted(node_list):
-                print(f"  - {node}")
         
         print(f"\nReachable nodes by file:")
         for file_name, node_list in reachable_by_file.items():
@@ -596,10 +652,7 @@ class FieldDependencyGraph:
             for node in sorted(unreachable):
                 print(f"  - {node}")
         
-        # Compute and display adjacency list of the subgraph
-        if reachable_nodes:
-            adjacency_list = self.get_subgraph_adjacency_list(reachable_nodes)
-            self.print_subgraph_adjacency_list(reachable_nodes, adjacency_list)
+        return adjacency_dict
 
     def print_graph_analysis(self):
         """Print detailed analysis of the graph structure."""
@@ -611,38 +664,6 @@ class FieldDependencyGraph:
         print(f"- Total nodes: {self.G.number_of_nodes()}")
         print(f"- Total edges: {self.G.number_of_edges()}")
         print(f"- Is DAG (Directed Acyclic Graph): {nx.is_directed_acyclic_graph(self.G)}")
-        
-        # Group nodes by type
-        node_types = {}
-        for node, attrs in self.nodes.items():
-            node_type = attrs['type']
-            if node_type not in node_types:
-                node_types[node_type] = []
-            node_types[node_type].append(node)
-        
-        print(f"\nNodes by Category:")
-        for node_type, node_list in node_types.items():
-            print(f"\n{node_type.upper()} FIELDS ({len(node_list)}):")
-            for node in sorted(node_list):
-                degree = self.G.degree(node)
-                print(f"  - {node} (degree: {degree})")
-        
-        # Find key nodes
-        print(f"\nKey Nodes Analysis:")
-        
-        # Nodes with highest degree (most connected)
-        degrees = [(node, self.G.degree(node)) for node in self.G.nodes()]
-        degrees.sort(key=lambda x: x[1], reverse=True)
-        print(f"\nMost Connected Fields (highest degree):")
-        for node, degree in degrees[:10]:
-            if degree > 0:
-                print(f"  - {node}: {degree} connections")
-        
-        # Isolated nodes (no connections)
-        isolated = [node for node in self.G.nodes() if self.G.degree(node) == 0]
-        print(f"\nIsolated Fields (no connections): {len(isolated)}")
-        for isolated_node in sorted(isolated):
-            print(f"  - {isolated_node}")
 
     @property
     def graph(self) -> nx.Graph:
@@ -719,7 +740,7 @@ def find_reachable_nodes(G, input_fields, output_fields=None):
 def print_reachable_analysis(G, nodes, input_fields, output_fields, reachable_nodes):
     """Legacy function - use FieldDependencyGraph.print_reachable_analysis() instead."""
     graph_obj = FieldDependencyGraph()
-    graph_obj.print_reachable_analysis(input_fields, output_fields, reachable_nodes)
+    return graph_obj.print_reachable_analysis(input_fields, output_fields, reachable_nodes)
 
 def print_graph_analysis(G, nodes):
     """Legacy function - use FieldDependencyGraph.print_graph_analysis() instead."""
@@ -739,8 +760,8 @@ def main():
     field_graph.print_graph_analysis()
     
     # Create visualization
-    print(f"\nGenerating visualization...")
-    field_graph.visualize_graph('task_1681_field_dependency_graph.png')
+    print(f"\nGenerating full graph visualization...")
+    field_graph.visualize_graph('full_graph.png', show=False)  # Save but don't show
     
     # Demonstrate reachable nodes functionality
     print(f"\n" + "="*80)
@@ -749,35 +770,23 @@ def main():
     
     # Example 1: What nodes are involved in paths from basic payment fields to fee calculation?
     input_fields = ['payments.merchant', 'payments.day_of_year', 'payments.year']
-    output_fields = ['fees.ID', 'compute.fee']
+    output_fields = []
     reachable_nodes = field_graph.find_reachable_nodes(input_fields, output_fields)
-    field_graph.print_reachable_analysis(input_fields, output_fields, reachable_nodes)
+    adjacency_dict = field_graph.print_reachable_analysis(input_fields, output_fields, reachable_nodes)
     
-    # Example 2: What if we only provide input fields (output_fields is empty)?
-    input_fields_only = ['payments.has_fraudulent_dispute']
-    reachable_from_inputs_only = field_graph.find_reachable_nodes(input_fields_only, [])
-    field_graph.print_reachable_analysis(input_fields_only, [], reachable_from_inputs_only)
+    # Visualize and show the subgraph
+    print(f"\nGenerating subgraph visualization...")
+    field_graph.visualize_subgraph(reachable_nodes, 'subgraph.png', show=True)  # Save and show
     
-    # Example 3: Comprehensive analysis with adjacency list
+    # Print the adjacency dictionary
     print(f"\n" + "="*80)
-    print("COMPREHENSIVE SUBGRAPH ANALYSIS")
+    print("SUBGRAPH ADJACENCY DICTIONARY")
     print("="*80)
+    print(f"\nAdjacency dictionary for reachable nodes:")
+    for node, neighbors in sorted(adjacency_dict.items()):
+        print(f"{node}: {neighbors}")
     
-    country_fields = ['payments.issuing_country', 'payments.acquirer_country']
-    fee_outputs = ['fees.ID']
-    analysis_result = field_graph.analyze_reachable_subgraph(country_fields, fee_outputs)
-    
-    print(f"\nComprehensive analysis for country fields -> fee calculation:")
-    print(f"Input fields: {analysis_result['input_fields']}")
-    print(f"Output fields: {analysis_result['output_fields']}")
-    print(f"Subgraph statistics: {analysis_result['subgraph_stats']}")
-    
-    # Print a subset of the adjacency list
-    print(f"\nSample adjacency list (first 5 nodes):")
-    sample_nodes = list(analysis_result['adjacency_list'].keys())[:5]
-    for node in sample_nodes:
-        neighbors = analysis_result['adjacency_list'][node]
-        print(f"  {node} -> {neighbors}")
+
     
 if __name__ == "__main__":
     main()
