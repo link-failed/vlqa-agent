@@ -69,6 +69,7 @@ def is_reasoning_llm(model_id: str) -> bool:
         "openai/o3",
         "openai/o3-mini",
         "o3",
+        "gpt-4o",
         "o3-mini",
         "deepseek/deepseek-reasoner",
         "gpt5"

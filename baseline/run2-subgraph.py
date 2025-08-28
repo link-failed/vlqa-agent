@@ -224,7 +224,7 @@ def run_single_task(
             question=task["question"],
             guidelines=task["guidelines"],
             referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else "",
-            subgraph_info=subgraph_info
+            subgraph=subgraph_info
         )
         agent = create_code_agent_with_reasoning_llm(model_id, api_base, api_key, max_steps, ctx_path, use_azure_auth)
         prompt = agent.system_prompt + "\n" + prompt
@@ -235,7 +235,7 @@ def run_single_task(
             question=task["question"],
             guidelines=task["guidelines"],
             referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else "",
-            subgraph_info=subgraph_info
+            subgraph=subgraph_info
         )
         agent = create_code_agent_with_chat_llm(model_id, api_base, api_key, max_steps, use_azure_auth)
 
@@ -265,7 +265,7 @@ def main():
     referred_mapping = load_referred_tasks_mapping()
     subgraph_mapping = load_subgraph()
 
-    runs_dir = Path().resolve() / "runs2-md"
+    runs_dir = Path().resolve() / "runs2-subgraph"
     runs_dir.mkdir(parents=True, exist_ok=True)
     timestamp = time.time() if not args.timestamp else args.timestamp
     base_filename = runs_dir / f"{args.model_id.replace('/', '_').replace('.', '_')}/{args.split}/{int(timestamp)}"
