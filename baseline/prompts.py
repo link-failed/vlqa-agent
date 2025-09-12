@@ -63,8 +63,10 @@ You must follow these guidelines when you produce your final answer: {guidelines
 
 {referred_examples}
 
-You are also given following dict of fields that are likely to be useful to answer the question, you can consider them as a knowledge graph subgraph:
+You are also given following dict of fields that are likely to be useful to answer the question, you should consider them as a knowledge graph and pay attention to adjacent nodes as they are likely to be related for analysis:
 {subgraph}
+
+For each node in the knowledge graph, "adjacent_field" refers to nodes that are very likely to be related to the current node; "description", "data_type" and "data_sample" are also important for accessing and processing the data correctly.
 
 Now Begin! If you solve the task correctly, you will receive a reward of $1,000,000.
 """
