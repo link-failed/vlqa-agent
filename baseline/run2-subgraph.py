@@ -3,7 +3,7 @@
 import yaml
 import sys
 from pathlib import Path
-from draw import get_field_dependency_adjacency, analyze_field_dependencies
+from draw import get_field_dependency_adjacency
 # Add parent directory to Python path to find dabstep_benchmark module
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -13,6 +13,7 @@ import os
 import time
 import ast
 import json
+import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import datasets
 import pandas as pd
@@ -41,26 +42,26 @@ logging.basicConfig(level=logging.WARNING, handlers=[TqdmLoggingHandler()])
 logger = logging.getLogger(__name__)
 
 
-def load_referred_tasks_mapping():
-    """Load the mapping of task_id to referred task IDs from clustered_llm_based.csv"""
-    csv_path = Path(__file__).resolve().parent.parent / "data" / "task_cluster" / "clustered_llm_based.csv"
-    df = pd.read_csv(csv_path)
-    mapping = {}
+# def load_referred_tasks_mapping():
+#     """Load the mapping of task_id to referred task IDs from clustered_llm_based.csv"""
+#     csv_path = Path(__file__).resolve().parent.parent / "data" / "task_cluster" / "clustered_llm_based.csv"
+#     df = pd.read_csv(csv_path)
+#     mapping = {}
     
-    for _, row in df.iterrows():
-        task_id = str(row['task_id'])
-        referred_str = str(row['referred'])
+#     for _, row in df.iterrows():
+#         task_id = str(row['task_id'])
+#         referred_str = str(row['referred'])
         
-        try:
-            if referred_str and referred_str != 'nan':
-                referred_ids = ast.literal_eval(referred_str)
-                mapping[task_id] = [str(ref_id) for ref_id in referred_ids] if isinstance(referred_ids, list) else []
-            else:
-                mapping[task_id] = []
-        except:
-            mapping[task_id] = []
+#         try:
+#             if referred_str and referred_str != 'nan':
+#                 referred_ids = ast.literal_eval(referred_str)
+#                 mapping[task_id] = [str(ref_id) for ref_id in referred_ids] if isinstance(referred_ids, list) else []
+#             else:
+#                 mapping[task_id] = []
+#         except:
+#             mapping[task_id] = []
     
-    return mapping
+#     return mapping
 
 
 def load_encode_data():
@@ -190,7 +191,7 @@ def parse_args():
     parser.add_argument("--tasks-ids", type=int, nargs="+", default=None)
     parser.add_argument("--api-base", type=str, default=None)
     parser.add_argument("--api-key", type=str, default=None)
-    parser.add_argument("--use-azure-auth", action="store_true", help="Use Azure managed identity authentication instead of API key")
+    # parser.add_argument("--use-azure-auth", action="store_true", help="Use Azure managed identity authentication instead of API key")
     parser.add_argument("--split", type=str, default="default", choices=["default", "dev"])
     parser.add_argument("--timestamp", type=str, default=None)
     return parser.parse_args()
@@ -206,12 +207,12 @@ def run_single_task(
         base_filename: Path,
         is_dev_data: bool,
         max_steps: int,
-        referred_mapping: dict,
+        # referred_mapping: dict,
         subgraph_mapping: dict
 ):
     task_id = str(task["task_id"])
-    referred_ids = referred_mapping.get(task_id, [])
-    referred_examples = get_referred_trajectories(referred_ids)
+    # referred_ids = referred_mapping.get(task_id, [])
+    # referred_examples = get_referred_trajectories(referred_ids)
     
     # Get subgraph information for this task
     task_subgraph = subgraph_mapping.get(task_id, {})
@@ -223,7 +224,8 @@ def run_single_task(
         prompt = reasoning_llm_task_prompt.format(
             question=task["question"],
             guidelines=task["guidelines"],
-            referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else "",
+            # referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else "",
+            referred_examples="",
             subgraph=subgraph_info
         )
         agent = create_code_agent_with_reasoning_llm(model_id, api_base, api_key, max_steps, ctx_path, use_azure_auth)
@@ -234,7 +236,8 @@ def run_single_task(
             ctx_path=ctx_path,
             question=task["question"],
             guidelines=task["guidelines"],
-            referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else "",
+            # referred_examples=f"\n\nReferred Examples:\n{referred_examples}" if referred_examples else "",
+            referred_examples="",
             subgraph=subgraph_info
         )
         agent = create_code_agent_with_chat_llm(model_id, api_base, api_key, max_steps, use_azure_auth)
@@ -262,7 +265,7 @@ def main():
     logger.warning(f"Starting run with arguments: {args}")
 
     ctx_path = download_context(str(Path().resolve()))
-    referred_mapping = load_referred_tasks_mapping()
+    # referred_mapping = load_referred_tasks_mapping()
     subgraph_mapping = load_subgraph()
 
     runs_dir = Path().resolve() / "runs2-subgraph"
@@ -297,12 +300,11 @@ def main():
                args.model_id,
                args.api_base,
                args.api_key,
-               args.use_azure_auth,
+               False,  # use_azure_auth
                ctx_path,
                base_filename,
                (args.split == "dev"),
                args.max_steps,
-               referred_mapping,
                subgraph_mapping
             )
             for task in tasks_to_run
@@ -311,6 +313,26 @@ def main():
             f.result()
 
     logger.warning("All tasks processed.")
+    
+    # Clean the logs file after processing is complete
+    logs_file_path = base_filename / "logs.txt"
+    if logs_file_path.exists():
+        try:
+            # Get the path to clean_logs.py (should be in the parent directory)
+            clean_logs_script = Path(__file__).resolve().parent.parent / "clean_logs.py"
+            
+            # Execute the clean_logs.py script
+            cmd = ["python", str(clean_logs_script), "--file", str(logs_file_path)]
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=str(Path(__file__).resolve().parent.parent))
+            
+            if result.returncode == 0:
+                logger.warning(f"Successfully cleaned logs: {logs_file_path}")
+            else:
+                logger.warning(f"Failed to clean logs: {result.stderr}")
+        except Exception as e:
+            logger.warning(f"Error executing clean_logs.py: {e}")
+    else:
+        logger.warning(f"Logs file not found: {logs_file_path}")
 
 
 if __name__ == "__main__":
