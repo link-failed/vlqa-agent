@@ -1,0 +1,32 @@
+[
+  {
+    "code_snippet": "code_5",
+    "similarity_score": 0.36129663401199474,
+    "description": "map day_of_year to month"
+  },
+  {
+    "code_snippet": "code_2",
+    "similarity_score": 0.3560595644905792,
+    "description": "fuzzy matching"
+  },
+  {
+    "code_snippet": "code_3",
+    "similarity_score": 0.3426080268223617,
+    "description": "map day_of_year to month"
+  },
+  {
+    "code_snippet": "code_1",
+    "similarity_score": 0.29725651952914256,
+    "description": "match attributes between fees.json and payments.csv"
+  },
+  {
+    "code_snippet": "code_4",
+    "similarity_score": 0.2559803704301413,
+    "description": "null value handling for fee rule attributes like is_credit"
+  },
+  {
+    "code_snippet": "code_6",
+    "similarity_score": 0.2234191670329747,
+    "description": "to filter applicable payments"
+  }
+]
